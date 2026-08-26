@@ -17,11 +17,10 @@ $subnet1Prefix = "10.0.0.0/25"
 $subnet2Name   = "Subnet2"
 $subnet2Prefix = "10.0.0.128/25"
 
-# Build the subnet configs
+# subnet configs
 $subnet1 = New-AzVirtualNetworkSubnetConfig -Name $subnet1Name -AddressPrefix $subnet1Prefix
 $subnet2 = New-AzVirtualNetworkSubnetConfig -Name $subnet2Name -AddressPrefix $subnet2Prefix
 
-# Create the VNet with both subnets attached
 $vnet = New-AzVirtualNetwork `
     -ResourceGroupName $resourceGroupName `
     -Location $location `
