@@ -1,7 +1,7 @@
 <#
 Notes
     Run from a machine with the ActiveDirectory, PowerShell or
-    on the  controller
+    on the domain controller
 #>
 
 param(
