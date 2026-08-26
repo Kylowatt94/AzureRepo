@@ -9,7 +9,6 @@ NOTES
 $resourceGroupName = "RGTest"
 $location           = "eastus"
 
-# Connect to Azure if this session isn't already authenticated
 if (-not (Get-AzContext)) {
     Connect-AzAccount
 }
