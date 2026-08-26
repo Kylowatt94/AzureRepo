@@ -5,9 +5,9 @@ Notes
 #>
 
 param(
-    [string]  $Name      = "cityofhomestead.com",
+    [string]  $Name      = "xxxhomesteadxxx.com",
     [int]     $InactiveDays    = 180,
-    [string]  $ExcludedOU      = "OU=Service Accounts,DC=cityofhomestead,DC=com",
+    [string]  $ExcludedOU      = "OU=Service Accounts,DC=xxxhomesteadxxx,DC=com",
     [string[]]$ExcludedGroups  = @("Domain Administrators", "Administrators"),
     [string]  $ReportPath      = "C:\Reports\InactiveUsers-$(Get-Date -Format 'yyyyMMdd-HHmmss').csv"
 )
