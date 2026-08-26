@@ -1,5 +1,5 @@
 <#
-.NOTES
+NOTES
     256 addresses (10.0.0.0 - 10.0.0.255), split here into two /25 subnets:
 
         Subnet1  10.0.0.0/25    (usable range 10.0.0.4  - 10.0.0.126)
