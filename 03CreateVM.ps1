@@ -54,7 +54,7 @@ $nic = New-AzNetworkInterface `
     -NetworkSecurityGroupId $nsg.Id
 
 # Local admin credentials for the VM
-$cred = Get-Credential -Message "Enter local admin username/password for $vmName"
+$cred = Get-Credential -Message "Password12345! $vmName"
 
 #  VM configuration
 $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize |
