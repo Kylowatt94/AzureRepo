@@ -5,7 +5,7 @@ NOTE: setup.exe itself (
     Make sure you run as an admin
 #>
 
-$ShareRoot = "\\OfficeSoftware\Office2019\ODT"   # where setup.exe lives
+$X= "\\OfficeSoftware\Office2019"   # where setup.exe lives
 $SetupExe  = Join-Path $REDACTED "setup.exe"
 
 $LogFolder = "C:\Logs\OfficeDeploy"
@@ -52,9 +52,9 @@ if (-not (Test-Path $LogFolder)) {
 
 Write-Log "Starting Office 2019 deployment (all-in-one script)."
 
-if (-not (Test-Path $ShareRoot)) {
-    Write-Log "ERROR: Share not reachable: $ShareRoot"
-    throw "Cannot continue - share not reachable: $ShareRoot"
+if (-not (Test-Path $XRoot)) {
+    Write-Log "ERROR: Share not reachable: $XRoot"
+    throw "Cannot continue - share not reachable: $XRoot"
 }
 if (-not (Test-Path $SetupExe)) {
     Write-Log "ERROR: setup.exe not found at: $SetupExe"
@@ -85,7 +85,7 @@ if ($uninstallProc.ExitCode -ne 0) {
 
 # 2: install Office 2019
 
-Write-Log "Installing Office 2019 from $ShareRoot ..."
+Write-Log "Installing Office 2019 from $XRoot ..."
 $installProc = Start-Process -FilePath $SetupExe `
     -ArgumentList "/configure `"$InstallConfigPath`"" `
     -Wait -PassThru -WindowStyle Hidden
