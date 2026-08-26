@@ -1,29 +1,21 @@
 <#
 NOTE: setup.exe itself (
-    still has to come from \\Software\OfficeSoftware - it's a compiled binary
-    Microsoft ships, not something that can be embedded as text in a
-    PowerShell script. Everything else is now inline.
+    still has to come from \\Software\OfficeSoftware
 
-NOTES
-    Run elevated (as SYSTEM/admin). Adjust $ShareRoot and the product ID in
-    $InstallXml to match your environment.
+    Make sure you run as an admin
 #>
 
 $ShareRoot = "\\OfficeSoftware\Office2019\ODT"   # where setup.exe lives
-$SetupExe  = Join-Path $ShareRoot "setup.exe"
+$SetupExe  = Join-Path $REDACTED "setup.exe"
 
 $LogFolder = "C:\Logs\OfficeDeploy"
 $LogFile   = Join-Path $LogFolder ("Office2019-Install-{0}.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
 
 $WorkDir   = Join-Path $env:TEMP ("OfficeDeploy_{0}" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
 
-# EMBEDDED ODT CONFIGS
-
-# Assumes Office 2019 ProPlus Volume License, PerpetualVL2019 channel.
-# Change ProPlus2019Volume to Standard2019Volume if that's what you deployed.
 $InstallXml = @"
 <Configuration>
-  <Add SourcePath="$ShareRoot" OfficeClientEdition="64" Channel="PerpetualVL2019">
+  <Add SourcePath="$REDACTED" OfficeClientEdition="64" Channel="PerpetualVL2019">
     <Product ID="ProPlus2019Volume">
       <Language ID="en-us" />
     </Product>
@@ -33,8 +25,6 @@ $InstallXml = @"
   <Logging Level="Standard" Path="%temp%\OfficeInstallLogs" />
 </Configuration>
 "@
-
-# Removes Office products before installing 2019.
 
 $UninstallXml = @"
 <Configuration>
