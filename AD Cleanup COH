@@ -1,7 +1,4 @@
 <#
- Excludes:
-      accounts under $ExcludedOU
-      members of $ExcludedGroups
 Notes
     Run from a machine with the ActiveDirectory, PowerShell or
     on the  controller
