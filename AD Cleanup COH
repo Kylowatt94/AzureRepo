@@ -17,7 +17,7 @@ Import-Module ActiveDirectory -ErrorAction Stop
 $thresholdDate = (Get-Date).AddDays(-$InactiveDays)
 Write-Host "Checking for enabled accounts with no logon since $($thresholdDate.ToString('yyyy-MM-dd')) (or never logged on)..."
 
-# --- Build the set of SamAccountNames to exclude via group membership ---
+
 $excludedMembers = New-Object System.Collections.Generic.HashSet[string]
 foreach ($groupName in $ExcludedGroups) {
     try {
@@ -31,13 +31,13 @@ foreach ($groupName in $ExcludedGroups) {
 }
 Write-Host "Excluding $($excludedMembers.Count) accounts via admin/privileged group membership."
 
-# Pull all enabled users with the properties we need
+# Pull all enabled users
 $allUsers = Get-ADUser -Server $Name -Filter { Enabled -eq $true } `
     -Properties LastLogonTimestamp, DistinguishedName, Description, whenCreated
 
 Write-Host "Retrieved $($allUsers.Count) enabled user accounts from $Name."
 
-#  Filter and shape the results 
+#  Filter the results 
 $results = foreach ($user in $allUsers) {
 
     # Skip anything under the excluded OU
