@@ -1,12 +1,28 @@
+#Requires -RunAsAdministrator
 <#
-NOTE: setup.exe itself (
-    still has to come from \\Software\OfficeSoftware
+.SYNOPSIS
+    Silently removes any existing Click-to-Run Office and installs Office 2019
+    Pro Plus (volume licensed, 64-bit) from a network share.
 
-    Make sure you run as an admin
+.DESCRIPTION
+    An all-in-one deployment wrapper around the Office Deployment Tool (ODT):
+      1. Validates the source share and setup.exe
+      2. Generates uninstall/install XML configs in a temp working folder
+      3. Removes any existing Click-to-Run Office installation
+      4. Installs Office 2019 Pro Plus from the share
+      5. Verifies the install via the ClickToRun registry key
+      6. Cleans up on success; leaves configs behind on failure for troubleshooting
+
+    All steps are logged to C:\Logs\OfficeDeploy.
+
+.NOTES
+    Requires: Administrator rights and read access to the software share.
+    setup.exe (the ODT) and the Office source files must already be on the share.
+    Exit code: 0 on success, otherwise the ODT install exit code.
 #>
 
-$X= "\\OfficeSoftware\Office2019"   # where setup.exe lives
-$SetupExe  = Join-Path $REDACTED "setup.exe"
+$SourceRoot = "\\fileserver\Software\Office2019"   # where setup.exe and the Office source files live
+$SetupExe   = Join-Path $SourceRoot "setup.exe"
 
 $LogFolder = "C:\Logs\OfficeDeploy"
 $LogFile   = Join-Path $LogFolder ("Office2019-Install-{0}.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
@@ -15,7 +31,7 @@ $WorkDir   = Join-Path $env:TEMP ("OfficeDeploy_{0}" -f (Get-Date -Format "yyyyM
 
 $InstallXml = @"
 <Configuration>
-  <Add SourcePath="$REDACTED" OfficeClientEdition="64" Channel="PerpetualVL2019">
+  <Add SourcePath="$SourceRoot" OfficeClientEdition="64" Channel="PerpetualVL2019">
     <Product ID="ProPlus2019Volume">
       <Language ID="en-us" />
     </Product>
@@ -52,9 +68,9 @@ if (-not (Test-Path $LogFolder)) {
 
 Write-Log "Starting Office 2019 deployment (all-in-one script)."
 
-if (-not (Test-Path $XRoot)) {
-    Write-Log "ERROR: Share not reachable: $XRoot"
-    throw "Cannot continue - share not reachable: $XRoot"
+if (-not (Test-Path $SourceRoot)) {
+    Write-Log "ERROR: Share not reachable: $SourceRoot"
+    throw "Cannot continue - share not reachable: $SourceRoot"
 }
 if (-not (Test-Path $SetupExe)) {
     Write-Log "ERROR: setup.exe not found at: $SetupExe"
@@ -70,7 +86,7 @@ Set-Content -Path $InstallConfigPath   -Value $InstallXml   -Encoding UTF8
 Write-Log "Wrote temp ODT configs to $WorkDir"
 
 
-# remove any existing Click-to-Run Office
+# Step 1: remove any existing Click-to-Run Office
 
 Write-Log "Removing any existing Click-to-Run Office installation..."
 $uninstallProc = Start-Process -FilePath $SetupExe `
@@ -83,9 +99,9 @@ if ($uninstallProc.ExitCode -ne 0) {
 }
 
 
-# 2: install Office 2019
+# Step 2: install Office 2019
 
-Write-Log "Installing Office 2019 from $XRoot ..."
+Write-Log "Installing Office 2019 from $SourceRoot ..."
 $installProc = Start-Process -FilePath $SetupExe `
     -ArgumentList "/configure `"$InstallConfigPath`"" `
     -Wait -PassThru -WindowStyle Hidden
@@ -93,7 +109,7 @@ $installProc = Start-Process -FilePath $SetupExe `
 Write-Log "Install step exit code: $($installProc.ExitCode)"
 
 
-# verify
+# Step 3: verify
 
 $configKey = "HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration"
 if (Test-Path $configKey) {
@@ -105,7 +121,7 @@ else {
 }
 
 
-# CLEANUP
+# Step 4: cleanup
 
 if ($installProc.ExitCode -eq 0) {
     Remove-Item -Path $WorkDir -Recurse -Force -ErrorAction SilentlyContinue

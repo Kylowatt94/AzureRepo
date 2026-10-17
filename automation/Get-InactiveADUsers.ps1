@@ -1,15 +1,47 @@
 <#
-Notes
-    Run from a machine with the ActiveDirectory, PowerShell or
-    on the domain controller
+.SYNOPSIS
+    Reports enabled Active Directory accounts that have been inactive for a
+    set number of days (or have never logged on).
+
+.DESCRIPTION
+    Finds stale accounts as the first step of an AD cleanup. The script is
+    read-only: it builds a report and does not disable or delete anything.
+
+    - Uses LastLogonTimestamp (replicated) to determine last activity
+    - Treats never-logged-on accounts as inactive since creation
+    - Skips accounts under an excluded OU (e.g. service accounts)
+    - Skips members (recursive) of privileged groups
+    - Exports results to a timestamped CSV and prints a summary table
+
+.PARAMETER DomainName
+    The domain (or a specific domain controller) to query.
+
+.PARAMETER InactiveDays
+    Accounts with no logon in this many days are reported. Default: 180.
+
+.PARAMETER ExcludedOU
+    Distinguished name of an OU whose accounts are always skipped.
+
+.PARAMETER ExcludedGroups
+    Groups whose members are always skipped.
+
+.PARAMETER ReportPath
+    Path of the CSV report.
+
+.EXAMPLE
+    .\Get-InactiveADUsers.ps1 -DomainName corp.contoso.com -InactiveDays 90
+
+.NOTES
+    Requires: ActiveDirectory module (RSAT) or run on a domain controller.
+    LastLogonTimestamp can lag real activity by up to ~14 days by design.
 #>
 
 param(
-    [string]  $Name      = "xxxhomesteadxxx.com",
-    [int]     $InactiveDays    = 180,
-    [string]  $ExcludedOU      = "OU=Service Accounts,DC=xxxhomesteadxxx,DC=com",
-    [string[]]$ExcludedGroups  = @("Domain Administrators", "Administrators"),
-    [string]  $ReportPath      = "C:\Reports\InactiveUsers-$(Get-Date -Format 'yyyyMMdd-HHmmss').csv"
+    [string]  $DomainName     = "contoso.com",
+    [int]     $InactiveDays   = 180,
+    [string]  $ExcludedOU     = "OU=Service Accounts,DC=contoso,DC=com",
+    [string[]]$ExcludedGroups = @("Domain Admins", "Administrators"),
+    [string]  $ReportPath     = "C:\Reports\InactiveUsers-$(Get-Date -Format 'yyyyMMdd-HHmmss').csv"
 )
 
 Import-Module ActiveDirectory -ErrorAction Stop
@@ -17,7 +49,7 @@ Import-Module ActiveDirectory -ErrorAction Stop
 $thresholdDate = (Get-Date).AddDays(-$InactiveDays)
 Write-Host "Checking for enabled accounts with no logon since $($thresholdDate.ToString('yyyy-MM-dd')) (or never logged on)..."
 
-
+# Build the set of accounts to exclude via privileged group membership
 $excludedMembers = New-Object System.Collections.Generic.HashSet[string]
 foreach ($groupName in $ExcludedGroups) {
     try {
@@ -32,12 +64,12 @@ foreach ($groupName in $ExcludedGroups) {
 Write-Host "Excluding $($excludedMembers.Count) accounts via admin/privileged group membership."
 
 # Pull all enabled users
-$allUsers = Get-ADUser -Server $Name -Filter { Enabled -eq $true } `
+$allUsers = Get-ADUser -Server $DomainName -Filter { Enabled -eq $true } `
     -Properties LastLogonTimestamp, DistinguishedName, Description, whenCreated
 
-Write-Host "Retrieved $($allUsers.Count) enabled user accounts from $Name."
+Write-Host "Retrieved $($allUsers.Count) enabled user accounts from $DomainName."
 
-#  Filter the results 
+# Filter the results
 $results = foreach ($user in $allUsers) {
 
     # Skip anything under the excluded OU
@@ -74,7 +106,7 @@ $results = foreach ($user in $allUsers) {
     }
 }
 
-$results = $results | Sort-Object DaysInactive -Descending
+$results = @($results | Sort-Object DaysInactive -Descending)
 
 # Output
 if ($results.Count -eq 0) {

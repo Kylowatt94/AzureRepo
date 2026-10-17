@@ -1,9 +1,25 @@
+<#
+.SYNOPSIS
+    Creates a subnet-level NSG (HTTP from the Internet, SSH from an admin IP)
+    and associates it with Subnet1.
+
+.DESCRIPTION
+    Step 4 of the Az PowerShell lab. Demonstrates locking management access
+    (SSH) to a single trusted source IP while leaving web traffic open.
+
+.NOTES
+    Requires:   Az.Network
+    Depends on: 02-New-VirtualNetwork.ps1
+
+    Set $AdminSourceIP to your own public IP (CIDR /32) before running.
+#>
+
 $ResourceGroupName = "RGTest"
-$Location           = "eastus"
-$NsgName            = "NSGTest"
-$vnetName           = "VnetTest"
-$subnetName         = "Subnet1"
-$AdminSourceIP      = "My.Public.Ip/32"
+$Location          = "eastus"
+$NsgName           = "NSGTest"
+$vnetName          = "VnetTest"
+$subnetName        = "Subnet1"
+$AdminSourceIP     = "<your-public-ip>/32"
 
 # HTTP from the Internet
 $AllowHttp = New-AzNetworkSecurityRuleConfig -Name "in-allow-http-from-internet" `
@@ -11,7 +27,7 @@ $AllowHttp = New-AzNetworkSecurityRuleConfig -Name "in-allow-http-from-internet"
     -SourceAddressPrefix Internet -SourcePortRange * `
     -DestinationAddressPrefix * -DestinationPortRange 80
 
-# SSH
+# SSH from the admin IP only
 $AllowSsh = New-AzNetworkSecurityRuleConfig -Name "in-allow-ssh-admin" `
     -Access Allow -Protocol Tcp -Direction Inbound -Priority 110 `
     -SourceAddressPrefix $AdminSourceIP -SourcePortRange * `
@@ -23,7 +39,7 @@ $Nsg = New-AzNetworkSecurityGroup -Name $NsgName `
     -Location $Location `
     -SecurityRules $AllowHttp, $AllowSsh
 
-# Attaches the NSG
+# Attach the NSG to the subnet
 $vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $ResourceGroupName
 
 Set-AzVirtualNetworkSubnetConfig -VirtualNetwork $vnet -Name $subnetName `

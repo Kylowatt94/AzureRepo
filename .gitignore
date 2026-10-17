@@ -1,0 +1,11 @@
+# Script output
+*.csv
+*.log
+
+# Editor
+.vscode/
+*.code-workspace
+
+# OS
+Thumbs.db
+.DS_Store
